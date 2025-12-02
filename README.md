@@ -1,13 +1,11 @@
 # AI Bootcamp Project – Prompted Document Processor
 
-## Week 2 – Databases & Data Pipelines
+## Week 3 – Databases & Data Pipelines
 
 The service now gains **real persistence** and **queryable history**.  
 Students will replace the in-memory store with a SQL database, add basic ETL, and implement async data access patterns. Deliverable: **API backed by a real DB (SQLite → Postgres)** with migration scripts, history endpoint, and test coverage.
 
----
-
-### 1) Learning Objectives
+## 1. Learning Objectives
 
 * **Database integration**: use SQLModel / SQLAlchemy with FastAPI.
 * **Persistence patterns**: session management, repositories, migrations.
@@ -20,9 +18,9 @@ Students will replace the in-memory store with a SQL database, add basic ETL, an
 
 ---
 
-### 2) Repository Changes
+## 2. Repository Changes
 
-```
+```text
 prompted-doc-processor/
 ├─ app/
 │  ├─ services/
@@ -60,118 +58,142 @@ prompted-doc-processor/
 
 ---
 
-### 3) Endpoints (Week 2 Additions)
+## 3. Endpoints (Week 2 Additions)
 
-- `GET /v1/history?limit=50&purpose=&user_id=` – returns recent predictions with timestamp, prompt_id, user_id, latency, provider/model.
-- (Optional) `POST /v1/prompts/export` – triggers CSV export of prompt usage logs to `/var/exports/prompt_logs.csv`.
-- Existing endpoints continue to work, now backed by the DB (with the legacy store available behind a feature flag).
+* `GET /v1/history?limit=50&purpose=&user_id=` – returns recent predictions with timestamp, prompt_id, user_id, latency, provider/model.
+* (Optional) `POST /v1/prompts/export` – triggers CSV export of prompt usage logs to `/var/exports/prompt_logs.csv`.
+* Existing endpoints continue to work, now backed by the DB (with the legacy store available behind a feature flag).
 
 ---
 
-### 4) Work Plan – 9 One-Hour Practical Sessions (Days 3–5)
+## 4. Work Plan – 9 One-Hour Practical Sessions (Days 3–5)
 
 > Theoretical sessions (Days 1–2) provide essential SQL, schema design, and data pipeline context. These project labs turn those concepts into a working backend with persistent storage.
 
-#### **Day 3 – Database Integration & Migration Setup**
+### **Day 3 – Database Integration & Migration Setup**
 
-**10:45–11:45 – Lab 1: SQLModel Setup**  
+* **10:45–11:45 – Lab 1: SQLModel Setup**  
+
+  **Instructions**
+
+  1. Install deps: `pip install sqlmodel sqlalchemy alembic aiosqlite asyncpg psycopg[binary]`.
+  2. Create `app/services/db.py` with async engine + session factory.
+  3. Add `DATABASE_URL` and `ASYNC_DB=true` to `.env` (default SQLite).
+  4. Wire a `/health/db` check in `app/main.py` using a quick `SELECT 1`.
+
+  **Deliverables**
+  
+  * `db.py` implementing `get_engine()`, `get_session()`.
+  * Screenshot or log showing `/health/db` returns OK.
+
+* **14:30–15:30 – Lab 2: Define Tables & Initial Migration**  
+
+  **Instructions**
+
+  1. Create `app/models/tables.py` with `Prompt` and `PromptUsage` SQLModel classes.
+  2. Initialize Alembic (`alembic init migrations`) and configure `env.py` to use SQLModel metadata.
+  3. Generate revision: `alembic revision --autogenerate -m "init"` and apply: `alembic upgrade head`.
+
+  **Deliverables**
+
+  * `migrations/` directory with `env.py` and an `init` revision.
+  * SQLite or Postgres DB initialized successfully.
+
+* **17:00–18:00 – Lab 3: DB-Backed Prompt Store**  
 **Instructions**
-1. Install deps: `pip install sqlmodel sqlalchemy alembic aiosqlite asyncpg psycopg[binary]`.
-2. Create `app/services/db.py` with async engine + session factory.
-3. Add `DATABASE_URL` and `ASYNC_DB=true` to `.env` (default SQLite).
-4. Wire a `/health/db` check in `app/main.py` using a quick `SELECT 1`.
 
-**Deliverables**
-- `db.py` implementing `get_engine()`, `get_session()`.
-- Screenshot or log showing `/health/db` returns OK.
+  1. Implement `app/services/prompt_store_sql.py` mirroring `PromptStore` API.
+  2. Update `routes_prompts.py` to import and use `PromptStoreSQL`.
+  3. Ensure version bump on template change; maintain activation invariant: one active prompt per `(user_id, purpose)`.
 
-**14:30–15:30 – Lab 2: Define Tables & Initial Migration**  
-**Instructions**
-1. Create `app/models/tables.py` with `Prompt` and `PromptUsage` SQLModel classes.
-2. Initialize Alembic (`alembic init migrations`) and configure `env.py` to use SQLModel metadata.
-3. Generate revision: `alembic revision --autogenerate -m "init"` and apply: `alembic upgrade head`.
+  **Deliverables**
 
-**Deliverables**
-- `migrations/` directory with `env.py` and an `init` revision.
-- SQLite or Postgres DB initialized successfully.
-
-**17:00–18:00 – Lab 3: DB-Backed Prompt Store**  
-**Instructions**
-1. Implement `app/services/prompt_store_sql.py` mirroring `PromptStore` API.
-2. Update `routes_prompts.py` to import and use `PromptStoreSQL`.
-3. Ensure version bump on template change; maintain activation invariant: one active prompt per `(user_id, purpose)`.
-
-**Deliverables**
-- CRUD + activation working persistently.
-- Restart app → data survives restart.
+  * CRUD + activation working persistently.
+  * Restart app → data survives restart.
 
 ---
 
-#### **Day 4 – Async Ops, Logging & History (NoSQL Preview)**
+### **Day 4 – Async Ops, Logging & History (NoSQL Preview)**
 
-**10:45–11:45 – Lab 4: Async Usage Logging**  
-**Instructions**
-1. Update `processor.py` to record a `PromptUsage` row per `/v1/predict` call.
-2. Store latency, model_info, prompt_id, user_id, purpose.
-3. Verify async DB writes complete successfully.
+* **10:45–11:45 – Lab 4: Async Usage Logging**  
 
-**Deliverables**
-- After calling `/v1/predict`, a row appears in `prompt_usage`.
+  **Instructions**
 
-**14:30–15:30 – Lab 5: `/v1/history` Endpoint**  
-**Instructions**
-1. Create `app/api/routes_history.py` with `GET /v1/history` (filters: `limit`, `purpose`, `user_id`).
-2. Join against `Prompt` for name/version.
-3. Add pagination and ordering by `created_at DESC`.
+  1. Update `processor.py` to record a `PromptUsage` row per `/v1/predict` call.
+  2. Store latency, model_info, prompt_id, user_id, purpose.
+  3. Verify async DB writes complete successfully.
 
-**Deliverables**
-- JSON response sample with ≥ 3 records and filter working.
-- Endpoint tested successfully.
+  **Deliverables**
 
-**17:00–18:00 – Lab 6: Postgres Migration + Optional Vector Store Experiment**  
-**Instructions**
-1. Migrate from SQLite to Postgres (`docker-compose` or local install).
-2. Verify migrations, CRUD, `/predict`, `/history` work with Postgres.
-3. *(Optional)* Experiment: integrate FAISS or Chroma to store vector embeddings for prompts — preview of Week 3.
+  * After calling `/v1/predict`, a row appears in `prompt_usage`.
 
-**Deliverables**
-- API connected to Postgres, all endpoints pass.
-- Optional: small demo saving prompt embeddings to a local vector index.
+* **14:30–15:30 – Lab 5: `/v1/history` Endpoint**  
 
----
+  **Instructions**
 
-#### **Day 5 – Testing, ETL & Reflection**
+  1. Create `app/api/routes_history.py` with `GET /v1/history` (filters: `limit`, `purpose`, `user_id`).
+  2. Join against `Prompt` for name/version.
+  3. Add pagination and ordering by `created_at DESC`.
 
-**10:45–11:45 – Lab 7: DB Fixtures & Tests**  
-**Instructions**
-1. Create `tests/fixtures/db_fixture.py` (in-memory SQLite).
-2. Add `test_db_store.py` (CRUD, activation, versioning).
-3. Add `test_history_api.py` (ordering, filters).
+  **Deliverables**
 
-**Deliverables**
-- `pytest` passes; show test summary.
+  * JSON response sample with ≥ 3 records and filter working.
+  * Endpoint tested successfully.
 
-**14:30–15:30 – Lab 8: ETL-Lite Export to CSV**  
-**Instructions**
-1. Implement `export_logs_to_csv()` in `db.py` or a dedicated script.
-2. Export columns: `created_at,prompt_id,user_id,purpose,latency_ms,model_info`.
-3. Optionally expose as `/v1/prompts/export`.
+* **17:00–18:00 – Lab 6: Postgres Migration + Optional Vector Store Experiment**  
 
-**Deliverables**
-- CSV generated under `var/exports/` with ≥ 5 rows.
+  **Instructions**
 
-**17:00–18:00 – Lab 9: Review, Showcase & Governance Reflection**  
-**Instructions**
-1. Demo: create prompt → predict → history → export.
-2. Write a short reflection (~100 words) on **data governance & provenance**: How would you ensure traceability of generated data and model outputs?
+  1. Migrate from SQLite to Postgres (`docker-compose` or local install).
+  2. Verify migrations, CRUD, `/predict`, `/history` work with Postgres.
+  3. *(Optional)* Experiment: integrate FAISS or Chroma to store vector embeddings for prompts — preview of Week 3.
 
-**Deliverables**
-- PR link to `feat/week2-db-pipelines` branch.
-- Reflection note in PR or markdown file.
+  **Deliverables**
+
+  * API connected to Postgres, all endpoints pass.
+  * Optional: small demo saving prompt embeddings to a local vector index.
 
 ---
 
-### 5) Quickstart (Week 2 State)
+### **Day 5 – Testing, ETL & Reflection**
+
+* **10:45–11:45 – Lab 7: DB Fixtures & Tests**  
+
+  **Instructions**
+
+  1. Create `tests/fixtures/db_fixture.py` (in-memory SQLite).
+  2. Add `test_db_store.py` (CRUD, activation, versioning).
+  3. Add `test_history_api.py` (ordering, filters).
+
+  **Deliverables**
+
+  * `pytest` passes; show test summary.
+
+* **14:30–15:30 – Lab 8: ETL-Lite Export to CSV**  
+
+  **Instructions**
+
+  1. Implement `export_logs_to_csv()` in `db.py` or a dedicated script.
+  2. Export columns: `created_at,prompt_id,user_id,purpose,latency_ms,model_info`.
+  3. Optionally expose as `/v1/prompts/export`.
+
+  **Deliverables**
+
+  * CSV generated under `var/exports/` with ≥ 5 rows.
+
+* **17:00–18:00 – Lab 9: Review, Showcase & Governance Reflection**  
+
+  **Instructions**
+
+  1. Demo: create prompt → predict → history → export.
+  2. Write a short reflection (~100 words) on **data governance & provenance**: How would you ensure traceability of generated data and model outputs?
+
+  **Deliverables**
+
+  * PR link to `feat/week2-db-pipelines` branch.
+  * Reflection note in PR or markdown file.
+
+## 5. Quickstart (Week 2 State)
 
 ```bash
 pip install -r requirements.txt
@@ -187,7 +209,7 @@ uvicorn app.main:app --reload --port 8080
 
 ---
 
-### 6) Stretch Goals (optional)
+## 6. Stretch Goals (optional)
 
 * **Pagination & filters** on `/v1/history` (cursor-based).
 * **Foreign-key integrity** with cascading deletes.
@@ -197,6 +219,6 @@ uvicorn app.main:app --reload --port 8080
 
 ---
 
-### Appendix A — Alembic Quick Guide (with SQLModel)
+## Appendix A — Alembic Quick Guide (with SQLModel)
 
 [Appendix text unchanged from previous version — includes detailed setup, migration examples, and `db.py` skeleton.]
