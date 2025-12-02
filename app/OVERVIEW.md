@@ -16,7 +16,6 @@
 ### Prompts
 
 + `POST /v1/prompts` – create prompt
-
   + body: `{ purpose: str, name: str, template: str }`
   + returns: `{ id, purpose, name, template, version, active }`
 + `GET /v1/prompts?purpose=...` – list prompts (filter by purpose)
@@ -47,14 +46,17 @@
 ### Week 3 Additions: vector database
 
 + `POST /v1/chunks/insert` receives a chunk (under a maximum length) and inserts
-  into a vector database. Responds with an HTTP status code indicating if the
-  insertion was successful or not.
-+ `GET /v1/chunks/retrieve?text=...&n=...` - queries the vector database and
-  returns the `n` chunks nearest to `text`.
-+ Services for insertion and retrieval of chunks
+  into a vector database. Responds with a suitable HTTP status code indicating
+  if the insertion was successful or not.
+  + Error if database insertion fails.
+  + Error if chunk too big.
++ `GET /v1/chunks/retrieve?text=...&n_chunks=...` - queries the vector database and
+  returns the `n_chunks` chunks nearest to `text`.
++ Services for insertion and retrieval of chunks, `chunk_store.py`
 + Service for chunking a text
 + Prompt expansion based on Jinja2
 + Tests for all these features
++ Optional: tools
 
 ## Folder structure
 
@@ -63,7 +65,7 @@ prompted-doc-processor/
 ├─ app/
 │  ├─ services/
 │  │  ├─ db.py                 # SQLModel/SQLAlchemy engine + session helpers (async-friendly)
-│  │  ├─ vectordb.py           # Abstract class and ChromaDB implementation
+│  │  ├─ chunk_store.py        # Abstract class and ChromaDB implementation
 │  │  ├─ prompt_store_sql.py   # DB-backed PromptStore implementation
 │  │  ├─ prompt_store.py       # in-memory/file snapshot store kept for comparison
 │  │  ├─ processor.py          # writes PromptUsage logs to DB
