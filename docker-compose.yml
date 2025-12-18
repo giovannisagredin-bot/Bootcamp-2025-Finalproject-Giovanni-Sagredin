@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: scout-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./data/raw:/data/raw:ro
+    environment:
+      - MONGO_INITDB_DATABASE=player-dataset
+    networks:
+      - scout-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/player-dataset --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scout-system
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/vectorstore:/app/data/vectorstore
+      - ./logs:/app/logs
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DATABASE=player-dataset
+      - MONGO_COLLECTION=final-project
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - scout-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  scout-network:
+    driver: bridge

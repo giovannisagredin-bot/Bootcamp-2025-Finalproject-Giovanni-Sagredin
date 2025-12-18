@@ -1,40 +1,31 @@
-# Web Framework
-fastapi~=0.115
-uvicorn~=0.30
 
-# Data Validation
-pydantic~=2.9
-pydantic-settings~=2.4
-
-# Database
-pymongo~=4.6
 motor~=3.3
-
-# LLM Clients (install as needed)
-openai>=1.0.0
-google-generativeai>=0.3.0
-
-# LangChain for RAG and Agents
 langchain>=0.1.0
 langchain-community>=0.0.13
-
-# Vector Stores
-faiss-cpu>=1.7.4
-# chromadb>=0.4.0  # Alternative to FAISS
-
-# Embeddings
+# Embeddings & Vector Store
 sentence-transformers>=2.2.2
-
+chromadb>=0.4.0
 # Data Processing
 pandas>=2.0.0
 numpy>=1.24.0
-
-# Utilities
-python-dotenv>=1.0.0
 pyyaml>=6.0
-
 # Development
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
-black>=23.0.0
-ruff>=0.1.0
+
+
+fastapi~=0.115
+uvicorn~=0.30
+pydantic~=2.9
+pydantic-settings~=2.4
+requests
+python-dotenv
+google-genai
+openai
+pymongo
+jinja2
+click
+pytest
+ruff
+mypy
+black 

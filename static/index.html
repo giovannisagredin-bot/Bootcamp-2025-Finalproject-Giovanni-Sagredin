@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout Report System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+            font-family: inherit;
+        }
+
+        .autocomplete-container {
+            position: relative;
+        }
+
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .autocomplete-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background-color 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #f7fafc;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .player-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .player-details {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 4px;
+        }
+
+        .selected-player {
+            margin-top: 10px;
+            padding: 12px;
+            background: #f0fff4;
+            border: 2px solid #48bb78;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .selected-player.show {
+            display: block;
+        }
+
+        .selected-player-info {
+            color: #22543d;
+            font-weight: 600;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #718096;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+
+        .nav-tab:hover {
+            color: #667eea;
+        }
+
+        .nav-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .search-controls .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .search-controls .form-group:last-child {
+            flex: 0 0 150px;
+        }
+
+        .loading-search {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading-search.show {
+            display: block;
+        }
+
+        .results-container {
+            display: none;
+        }
+
+        .results-container.show {
+            display: block;
+        }
+
+        .answer-box {
+            background: linear-gradient(135deg, #f0fff4 0%, #e6f7ff 100%);
+            border: 2px solid #48bb78;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+        }
+
+        .answer-title {
+            color: #22543d;
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .answer-text {
+            color: #2d3748;
+            line-height: 1.7;
+            white-space: pre-line;
+        }
+
+        .sources-section {
+            margin-top: 30px;
+        }
+
+        .sources-title {
+            color: #2d3748;
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .source-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .source-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .source-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .player-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .similarity-score {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .player-info {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .info-badge {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .summary {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .attribute-section {
+            margin-top: 12px;
+        }
+
+        .attribute-title {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .attribute-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .attribute-tag {
+            background: #edf2f7;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #4a5568;
+        }
+
+        .attribute-tag.strength {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .attribute-tag.weakness {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-state-hint {
+            font-size: 14px;
+        }
+
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            border: 2px solid #48bb78;
+            color: #22543d;
+        }
+
+        .alert-error {
+            background: #fff5f5;
+            border: 2px solid #f56565;
+            color: #742a2a;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="submit">📝 Submit Report</button>
+            <button class="nav-tab" data-tab="search">🔍 Search Players</button>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <!-- Submit Report Tab -->
+        <div id="submitTab" class="tab-content active">
+            <h1>⚽ Scout Report System</h1>
+            <p class="subtitle">Search for a player and submit your scouting report</p>
+
+        <form id="reportForm">
+            <!-- Player Search -->
+            <div class="form-group">
+                <label for="playerSearch">Search Player</label>
+                <div class="autocomplete-container">
+                    <input 
+                        type="text" 
+                        id="playerSearch" 
+                        placeholder="Type player name (e.g., Messi, Ronaldo...)"
+                        autocomplete="off"
+                    >
+                    <div id="autocompleteResults" class="autocomplete-results"></div>
+                </div>
+                <div id="selectedPlayer" class="selected-player">
+                    <div class="selected-player-info">✓ Selected: <span id="selectedPlayerName"></span></div>
+                </div>
+                <input type="hidden" id="playerId">
+            </div>
+
+            <!-- Provider Selection -->
+            <div class="form-group">
+                <label for="provider">LLM Provider</label>
+                <select id="provider">
+                    <option value="openai">OpenAI (GPT-4)</option>
+                    <option value="google">Google (Gemini)</option>
+                    <option value="mock">Mock (Testing)</option>
+                </select>
+            </div>
+
+            <!-- Report Text -->
+            <div class="form-group">
+                <label for="reportText">Scout Report</label>
+                <textarea 
+                    id="reportText" 
+                    placeholder="Write your detailed scouting report here (minimum 10 characters)..."
+                    required
+                ></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn">Submit Report</button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: #718096;">Processing report...</p>
+            </div>
+        </form>
+        </div>
+
+        <!-- Search Players Tab -->
+        <div id="searchTab" class="tab-content">
+            <h1>🔍 Player Search</h1>
+            <p class="subtitle">Find players using natural language queries powered by AI</p>
+
+            <!-- Search Form -->
+            <div class="search-form">
+                <div class="search-controls">
+                    <div class="form-group">
+                        <label for="searchQuery">Search Query</label>
+                        <input 
+                            type="text" 
+                            id="searchQuery" 
+                            placeholder="e.g., 'Find fast right-back good at crossing', 'Technical midfielder with vision'..."
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="topK">Results</label>
+                        <select id="topK">
+                            <option value="3" selected>Top 3</option>
+                            <option value="5">Top 5</option>
+                            <option value="10">Top 10</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="provider">LLM Provider</label>
+                    <select id="provider">
+                        <option value="openai">OpenAI (GPT-4)</option>
+                        <option value="google">Google (Gemini)</option>
+                        <option value="mock">Mock (Testing)</option>
+                    </select>
+                </div>
+                <button id="searchBtn">Search Players</button>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading-search" id="loadingSearch">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px; color: #718096;">Searching and analyzing reports...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState">
+                <div class="empty-state-icon">🔎</div>
+                <div class="empty-state-text">Search for Players</div>
+                <div class="empty-state-hint">Enter a natural language query to find players from scout reports</div>
+            </div>
+
+            <!-- Results -->
+            <div class="results-container" id="resultsContainer">
+                <!-- Answer Box -->
+                <div class="answer-box">
+                    <div class="answer-title">
+                        🤖 AI Analysis
+                    </div>
+                    <div class="answer-text" id="answerText"></div>
+                </div>
+
+                <!-- Sources -->
+                <div class="sources-section">
+                    <div class="sources-title">📊 Source Scout Reports</div>
+                    <div id="sourcesContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3030';
+        let selectedPlayerId = null;
+        let debounceTimer = null;
+
+        // Tab switching
+        const tabs = document.querySelectorAll('.nav-tab');
+        const submitTab = document.getElementById('submitTab');
+        const searchTab = document.getElementById('searchTab');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Show correct content
+                if (tabName === 'submit') {
+                    submitTab.classList.add('active');
+                    searchTab.classList.remove('active');
+                } else {
+                    submitTab.classList.remove('active');
+                    searchTab.classList.add('active');
+                }
+            });
+        });
+
+        // Submit Report Tab Elements
+        const playerSearchInput = document.getElementById('playerSearch');
+        const autocompleteResults = document.getElementById('autocompleteResults');
+        const selectedPlayerDiv = document.getElementById('selectedPlayer');
+        const selectedPlayerName = document.getElementById('selectedPlayerName');
+        const playerIdInput = document.getElementById('playerId');
+        const reportForm = document.getElementById('reportForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const alertDiv = document.getElementById('alert');
+
+        // Autocomplete search
+        playerSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            clearTimeout(debounceTimer);
+            
+            if (query.length < 2) {
+                autocompleteResults.innerHTML = '';
+                return;
+            }
+
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/players/search?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    
+                    if (data.results.length === 0) {
+                        autocompleteResults.innerHTML = '<div class="autocomplete-item">No players found</div>';
+                        return;
+                    }
+
+                    autocompleteResults.innerHTML = data.results.map(player => `
+                        <div class="autocomplete-item" data-id="${player.id}" data-name="${player.name}">
+                            <div class="player-name">${player.name}</div>
+                            <div class="player-details">
+                                ${player.position} | ${player.nationality} | Rating: ${player.overall_rating}
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Add click handlers
+                    document.querySelectorAll('.autocomplete-item[data-id]').forEach(item => {
+                        item.addEventListener('click', () => {
+                            selectPlayer(item.dataset.id, item.dataset.name);
+                        });
+                    });
+                } catch (error) {
+                    console.error('Search error:', error);
+                    showAlert('error', 'Search Error', 'Failed to search players. Make sure the server is running.');
+                }
+            }, 300);
+        });
+
+        // Select player
+        function selectPlayer(id, name) {
+            selectedPlayerId = id;
+            playerIdInput.value = id;
+            playerSearchInput.value = name;
+            selectedPlayerName.textContent = name;
+            selectedPlayerDiv.classList.add('show');
+            autocompleteResults.innerHTML = '';
+        }
+
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.autocomplete-container')) {
+                autocompleteResults.innerHTML = '';
+            }
+        });
+
+        // Submit form
+        reportForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!selectedPlayerId) {
+                showAlert('error', 'Validation Error', 'Please select a player from the search results.');
+                return;
+            }
+
+            const reportText = document.getElementById('reportText').value.trim();
+            const provider = document.getElementById('provider').value;
+
+            if (reportText.length < 10) {
+                showAlert('error', 'Validation Error', 'Report must be at least 10 characters long.');
+                return;
+            }
+
+            // Show loading
+            submitBtn.disabled = true;
+            loading.classList.add('show');
+            alertDiv.classList.remove('show');
+
+            try {
+                const response = await fetch(`${API_BASE}/reports`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        player_id: selectedPlayerId,
+                        report_text: reportText,
+                        provider: provider
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // Handle toxicity error
+                    if (data.detail?.error === 'toxic_content') {
+                        showAlert('error', 'Report Rejected - Toxic Content', 
+                            `Toxicity Score: ${data.detail.toxicity_score.toFixed(2)}\n` +
+                            `Reason: ${data.detail.reason}\n` +
+                            `Categories: ${data.detail.categories.join(', ')}\n\n` +
+                            `${data.detail.suggestion}`
+                        );
+                    } else {
+                        showAlert('error', 'Submission Error', data.detail || 'Unknown error occurred');
+                    }
+                    return;
+                }
+
+                // Success
+                showAlert('success', 'Report Submitted Successfully! 🎉', 
+                    `Report ID: ${data.report_id}\n` +
+                    `Player: ${data.player_name}\n` +
+                    `Summary: ${data.summary}\n` +
+                    `Provider: ${data.provider_used}`
+                );
+
+                // Reset form
+                reportForm.reset();
+                selectedPlayerDiv.classList.remove('show');
+                selectedPlayerId = null;
+                playerIdInput.value = '';
+
+            } catch (error) {
+                console.error('Submission error:', error);
+                showAlert('error', 'Network Error', 'Failed to submit report. Make sure the server is running on port 8000.');
+            } finally {
+                submitBtn.disabled = false;
+                loading.classList.remove('show');
+            }
+        });
+
+        // Show alert
+        function showAlert(type, title, message) {
+            alertDiv.className = `alert alert-${type} show`;
+            alertDiv.innerHTML = `
+                <div class="alert-title">${title}</div>
+                <div style="white-space: pre-line;">${message}</div>
+            `;
+            alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // ========== SEARCH TAB FUNCTIONALITY ==========
+        const searchBtn = document.getElementById('searchBtn');
+        const loadingSearch = document.getElementById('loadingSearch');
+        const emptyState = document.getElementById('emptyState');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const answerText = document.getElementById('answerText');
+        const sourcesContainer = document.getElementById('sourcesContainer');
+
+        // Search button click
+        searchBtn.addEventListener('click', async () => {
+            const query = document.getElementById('searchQuery').value.trim();
+            const topK = parseInt(document.getElementById('topK').value);
+            const provider = document.getElementById('provider').value;
+
+            if (query.length < 3) {
+                showAlert('error', 'Validation Error', 'Query must be at least 3 characters long.');
+                return;
+            }
+
+            // Show loading
+            searchBtn.disabled = true;
+            loadingSearch.classList.add('show');
+            emptyState.style.display = 'none';
+            resultsContainer.classList.remove('show');
+            alertDiv.classList.remove('show');
+
+            try {
+                const response = await fetch(`${API_BASE}/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        top_k: topK,
+                        provider: provider
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showAlert('error', 'Search Error', data.detail || 'Unknown error occurred');
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                // Display results
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Search error:', error);
+                showAlert('error', 'Network Error', 'Failed to search. Make sure the server is running on port 8000.');
+                emptyState.style.display = 'block';
+            } finally {
+                searchBtn.disabled = false;
+                loadingSearch.classList.remove('show');
+            }
+        });
+
+        // Enter key to search
+        document.getElementById('searchQuery').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchBtn.click();
+            }
+        });
+
+        // Display results
+        function displayResults(data) {
+            // Show answer
+            answerText.textContent = data.answer;
+
+            // Show sources
+            sourcesContainer.innerHTML = data.sources.map((source, index) => {
+                const matchScore = (1 - source.score).toFixed(2); // Convert distance to similarity
+                
+                return `
+                    <div class="source-card">
+                        <div class="source-header">
+                            <div class="player-name">${source.player_name}</div>
+                            <div class="similarity-score">Match: ${(matchScore * 100).toFixed(0)}%</div>
+                        </div>
+                        <div class="player-info">
+                            <span class="info-badge">⚽ ${source.player_position}</span>
+                            <span class="info-badge">🌍 ${source.player_nationality}</span>
+                            ${source.overall_rating ? `<span class="info-badge">⭐ ${source.overall_rating}</span>` : ''}
+                            ${source.potential ? `<span class="info-badge">📈 Potential: ${source.potential}</span>` : ''}
+                            ${source.value_euro ? `<span class="info-badge">💰 €${(source.value_euro / 1000000).toFixed(1)}M</span>` : ''}
+                        </div>
+                        <div class="summary">${source.summary}</div>
+                        
+                        ${source.strengths.length > 0 ? `
+                            <div class="attribute-section">
+                                <div class="attribute-title">✅ Strengths</div>
+                                <div class="attribute-list">
+                                    ${source.strengths.map(s => `<span class="attribute-tag strength">${s}</span>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${source.weaknesses.length > 0 ? `
+                            <div class="attribute-section">
+                                <div class="attribute-title">⚠️ Weaknesses</div>
+                                <div class="attribute-list">
+                                    ${source.weaknesses.map(w => `<span class="attribute-tag weakness">${w}</span>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${source.technical_skills.length > 0 ? `
+                            <div class="attribute-section">
+                                <div class="attribute-title">🎯 Technical Skills</div>
+                                <div class="attribute-list">
+                                    ${source.technical_skills.map(t => `<span class="attribute-tag">${t}</span>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${source.physical_attributes.length > 0 ? `
+                            <div class="attribute-section">
+                                <div class="attribute-title">💪 Physical</div>
+                                <div class="attribute-list">
+                                    ${source.physical_attributes.map(p => `<span class="attribute-tag">${p}</span>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            resultsContainer.classList.add('show');
+        }
+    </script>
+</body>
+</html>
