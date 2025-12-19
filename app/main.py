@@ -36,23 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routers
-app.include_router(routes_scouting.router)
-app.include_router(routes_search.router)
-
-# Serve static files
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
-
-
-@app.get("/")
-async def root():
-    """Root endpoint"""
-    return {
-        "message": "Welcome to GenAI Bootcamp Project",
-        "version": "0.1.0",
-        "environment": settings.ENVIRONMENT
-    }
-
+# Health check endpoint (before static files mount)
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
@@ -61,3 +45,10 @@ async def health_check():
         "database": "mongodb",
         "environment": settings.ENVIRONMENT
     }
+
+# Register routers
+app.include_router(routes_scouting.router)
+app.include_router(routes_search.router)
+
+# Serve static files (must be last!)
+app.mount("/", StaticFiles(directory="static", html=True), name="static")

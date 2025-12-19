@@ -22,7 +22,8 @@ requests
 python-dotenv
 google-genai
 openai
-pymongo
+pymongo[srv]
+certifi
 jinja2
 click
 pytest

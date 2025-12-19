@@ -567,7 +567,7 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:3030';
+        const API_BASE = '';  // Empty = same origin (works both locally and on Cloud Run)
         let selectedPlayerId = null;
         let debounceTimer = null;
 
@@ -619,7 +619,7 @@
 
             debounceTimer = setTimeout(async () => {
                 try {
-                    const response = await fetch(`${API_BASE}/players/search?q=${encodeURIComponent(query)}`);
+                    const response = await fetch(`${API_BASE}/api/players/search?q=${encodeURIComponent(query)}`);
                     const data = await response.json();
                     
                     if (data.results.length === 0) {
@@ -689,7 +689,7 @@
             alertDiv.classList.remove('show');
 
             try {
-                const response = await fetch(`${API_BASE}/reports`, {
+                const response = await fetch(`${API_BASE}/api/reports`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -778,7 +778,7 @@
             alertDiv.classList.remove('show');
 
             try {
-                const response = await fetch(`${API_BASE}/search`, {
+                const response = await fetch(`${API_BASE}/api/search/players`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
